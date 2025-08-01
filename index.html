@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flowers for ShyAnne</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- p5.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+    <!-- YouTube Iframe API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <style>
+        /* Custom styles for gradient text and scrollbar */
+        .text-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        /* Custom scrollbar for bloom-info */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #2d3748; /* bg-gray-800 */
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4a5568; /* a darker gray */
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* even darker */
+        }
+
+        /* Ensure p5 canvas is responsive within its container */
+        #p5-canvas-container canvas {
+            display: block; /* Remove extra space below canvas */
+            width: 100% !important; /* Override p5's inline width */
+            height: 100% !important; /* Override p5's inline height */
+            object-fit: contain; /* Ensure the content fits without cropping */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans flex flex-col min-h-screen">
+
+    <!-- NEW: Dedication Header -->
+    <div class="bg-gradient-to-r from-red-800 to-blue-800 text-center py-3 px-4 shadow-xl z-20">
+        <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight">
+            <span class="text-gradient from-yellow-300 via-pink-300 to-purple-300">
+                A Dedication to ShyAnne
+            </span>
+        </h2>
+    </div>
+
+    <!-- Main Header -->
+    <header class="bg-gray-800 p-4 shadow-lg z-10">
+        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center">
+            <h1 class="text-3xl font-extrabold text-blue-400 mb-2 sm:mb-0">Flowers for ShyAnne</h1>
+            <p class="text-gray-400 text-lg italic">Your Name, Your Bloom, Your Infoscape.</p>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col lg:flex-row p-4 container mx-auto">
+        <!-- Canvas Container -->
+        <div id="p5-canvas-container" class="flex-grow lg:w-3/4 bg-gray-800 rounded-lg shadow-xl overflow-hidden relative flex items-center justify-center min-h-[400px] lg:min-h-0">
+            <!-- p5.js canvas will be appended here -->
+            <p id="webgl-error-message" class="hidden text-red-400 p-4 text-center">
+                Your browser or device does not support WebGL. Please ensure hardware acceleration is enabled or try a different browser.
+            </p>
+
+            <!-- Bloom Info Overlay -->
+            <div id="bloom-info" class="absolute top-4 right-4 bg-gray-700 bg-opacity-90 p-6 rounded-lg shadow-2xl max-w-sm w-full md:w-80 lg:w-96 hidden text-gray-200 overflow-y-auto max-h-[80%] custom-scrollbar z-30">
+                <h3 id="info-bloom-name" class="text-2xl font-bold text-blue-300 mb-3"></h3>
+                <p id="info-bloom-summary" class="text-sm mb-4 leading-relaxed"></p>
+                <div class="mb-2">
+                    <strong class="text-blue-200">Keywords:</strong>
+                    <span id="info-bloom-keywords" class="text-xs italic text-gray-300"></span>
+                </div>
+                <button id="close-info-btn" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out">
+                    Close
+                </button>
+            </div>
+        </div>
+
+        <!-- Controls & Description Panel (Sidebar) -->
+        <aside class="lg:w-1/4 lg:ml-4 mt-4 lg:mt-0 bg-gray-800 p-6 rounded-lg shadow-xl flex flex-col justify-between">
+            <div>
+                <h2 class="text-2xl font-bold text-blue-300 mb-4">About Your Bloom</h2>
+                <p class="text-gray-300 mb-6 leading-relaxed">
+                    Enter your first and last name to generate a unique, abstract floral visualization – your personal infoscape. Each name creates a distinct bloom, reflecting a unique digital identity. Click on the bloom to reveal its characteristics.
+                </p>
+
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label for="firstNameInput" class="block text-gray-400 text-sm font-bold mb-2">First Name:</label>
+                        <input type="text" id="firstNameInput" placeholder="e.g., Jane" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-700 border-gray-600 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="lastNameInput" class="block text-gray-400 text-sm font-bold mb-2">Last Name:</label>
+                        <input type="text" id="lastNameInput" placeholder="e.g., Doe" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-700 border-gray-600 focus:border-blue-500">
+                    </div>
+                    <p id="name-error" class="text-red-400 text-sm hidden">Please enter both first and last names.</p>
+                </div>
+
+                <button id="generateBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 ease-in-out mb-6">
+                    Generate My Bloom
+                </button>
+
+                <div class="text-center mb-6">
+                    <p class="text-gray-400 text-sm">Current Bloom:</p>
+                    <p id="currentBloomDisplay" class="text-xl font-semibold text-blue-400">No Bloom Yet</p>
+                </div>
+            </div>
+
+            <!-- Music Player Control -->
+            <div class="mt-auto pt-4 border-t border-gray-700">
+                <button id="musicToggleBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 ease-in-out">
+                    Play Ambient Music
+                </button>
+                <!-- Hidden YouTube Player Div -->
+                <div id="youtube-player" class="hidden"></div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 p-4 text-center text-gray-500 text-sm shadow-inner z-10">
+        <div class="container mx-auto">
+            &copy; 2023 Flowers for ShyAnne. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Fixed Watermark -->
+    <div style="position:fixed;bottom:10px;right:10px; opacity:0.3; font-size:0.75rem; color:#d1d5db; z-index:50;">
+        Built for ShyAnne
+    </div>
+
+    <script>
+        // Global p5.js instance variable
+        let p5Instance;
+        // Global YouTube player instance variable
+        let youtubePlayer;
+        // Global state for the currently displayed flower's data and visuals
+        let currentFlowerData = null;
+        let currentFlowerName = "No Bloom Yet";
+        let currentFlowerVisuals = null;
+
+        // --- DOM Elements ---
+        const firstNameInput = document.getElementById('firstNameInput');
+        const lastNameInput = document.getElementById('lastNameInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const nameError = document.getElementById('name-error');
+        const currentBloomDisplay = document.getElementById('currentBloomDisplay');
+        const p5CanvasContainer = document.getElementById('p5-canvas-container');
+        const webglErrorMessage = document.getElementById('webgl-error-message');
+        const bloomInfo = document.getElementById('bloom-info');
+        const infoBloomName = document.getElementById('info-bloom-name');
+        const infoBloomSummary = document.getElementById('info-bloom-summary');
+        const infoBloomKeywords = document.getElementById('info-bloom-keywords');
+        const closeInfoBtn = document.getElementById('close-info-btn');
+        const musicToggleBtn = document.getElementById('musicToggleBtn');
+        const youtubePlayerDiv = document.getElementById('youtube-player');
+
+        // --- Helper Functions ---
+
+        /**
+         * Simple deterministic hash function for strings.
+         * Ensures the same name always produces the same numerical seed.
+         * @param {string} str The input string.
+         * @returns {number} A non-negative integer hash.
+         */
+        function stringToHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char; // Bitwise operations for speed
+                hash |= 0; // Convert to 32bit integer
+            }
+            return Math.abs(hash); // Ensure non-negative
+        }
+
+        /**
+         * Generates a random integer within a range, based on a seed.
+         * @param {number} seed The seed for the random number generator.
+         * @param {number} min The minimum value (inclusive).
+         * @param {number} max The maximum value (inclusive).
+         * @returns {number} A pseudo-random integer.
+         */
+        function seededRandomInt(seed, min, max) {
+            const x = Math.sin(seed++) * 10000;
+            const rand = x - Math.floor(x); // Get fractional part
+            return Math.floor(rand * (max - min + 1)) + min;
+        }
+
+        /**
+         * Generates a random float within a range, based on a seed.
+         * @param {number} seed The seed for the random number generator.
+         * @param {number} min The minimum value (inclusive).
+         * @param {number} max The maximum value (inclusive).
+         * @returns {number} A pseudo-random float.
+         */
+        function seededRandomFloat(seed, min, max) {
+            const x = Math.sin(seed++) * 10000;
+            const rand = x - Math.floor(x); // Get fractional part
+            return rand * (max - min) + min;
+        }
+
+        // --- Flower Archetypes and Data Generation ---
+
+        // Predefined archetypes for varied yet consistent base visuals
+        const flowerArchetypes = [
+            { id: 0, name: "Radiant Sunpetal", baseHue: [30, 60], petalCountRange: [8, 14], petalShape: "ellipsoid", bloomSizeRange: [0.8, 1.2], petalSpreadRange: [0.6, 0.9], petalDimsRange: [[0.5, 0.7], [1.5, 2.0], [0.1, 0.2]], stemHeightRange: [2.0, 3.0], stemRadiusRange: [0.1, 0.15], keywords: ["bright", "energetic", "optimistic"] },
+            { id: 1, name: "Mystic Moonpetal", baseHue: [200, 240], petalCountRange: [6, 10], petalShape: "sphere", bloomSizeRange: [0.6, 1.0], petalSpreadRange: [0.4, 0.7], petalDimsRange: [[0.4, 0.6], [0.4, 0.6], [0.4, 0.6]], stemHeightRange: [1.5, 2.5], stemRadiusRange: [0.08, 0.12], keywords: ["calm", "reflective", "serene"] },
+            { id: 2, name: "Vibrant Heartleaf", baseHue: [300, 340], petalCountRange: [10, 16], petalShape: "ellipsoid", bloomSizeRange: [0.9, 1.3], petalSpreadRange: [0.7, 1.0], petalDimsRange: [[0.6, 0.8], [1.8, 2.5], [0.15, 0.25]], stemHeightRange: [2.2, 3.5], stemRadiusRange: [0.12, 0.18], keywords: ["passionate", "expressive", "bold"] },
+            { id: 3, name: "Ethereal Whisper", baseHue: [120, 180], petalCountRange: [5, 9], petalShape: "ellipsoid", bloomSizeRange: [0.5, 0.9], petalSpreadRange: [0.3, 0.6], petalDimsRange: [[0.3, 0.5], [1.0, 1.5], [0.08, 0.15]], stemHeightRange: [1.0, 2.0], stemRadiusRange: [0.05, 0.1], keywords: ["delicate", "subtle", "dreamy"] },
+        ];
+
+        /**
+         * Generates unique flower data based on user names.
+         * This function is async to simulate potential server-side processing,
+         * though in this mock, it's very fast.
+         * @param {string} firstName User's first name.
+         * @param {string} lastName User's last name.
+         * @returns {Promise<Object>} A promise resolving to the flower data object.
+         */
+        async function generateFlowerData(firstName, lastName) {
+            const fullDisplayName = `${firstName} ${lastName}`;
+            const combinedHash = stringToHash(fullDisplayName.toLowerCase());
+
+            // Use the hash to deterministically select an archetype
+            const archetypeIndex = combinedHash % flowerArchetypes.length;
+            const archetype = flowerArchetypes[archetypeIndex];
+
+            // Use the hash to seed further randomizations for uniqueness
+            let currentSeed = combinedHash;
+
+            const baseHue = seededRandomInt(currentSeed++, archetype.baseHue[0], archetype.baseHue[1]);
+            const saturation = seededRandomInt(currentSeed++, 70, 90); // Generally vibrant
+            const brightness = seededRandomInt(currentSeed++, 80, 100); // Generally bright
+
+            const petalCount = seededRandomInt(currentSeed++, archetype.petalCountRange[0], archetype.petalCountRange[1]);
+            const bloomSize = seededRandomFloat(currentSeed++, archetype.bloomSizeRange[0], archetype.bloomSizeRange[1]);
+            const petalSpread = seededRandomFloat(currentSeed++, archetype.petalSpreadRange[0], archetype.petalSpreadRange[1]);
+            const petalWidth = seededRandomFloat(currentSeed++, archetype.petalDimsRange[0][0], archetype.petalDimsRange[0][1]) * bloomSize;
+            const petalHeight = seededRandomFloat(currentSeed++, archetype.petalDimsRange[1][0], archetype.petalDimsRange[1][1]) * bloomSize;
+            const petalDepth = seededRandomFloat(currentSeed++, archetype.petalDimsRange[2][0], archetype.petalDimsRange[2][1]) * bloomSize;
+
+            const stemHeight = seededRandomFloat(currentSeed++, archetype.stemHeightRange[0], archetype.stemHeightRange[1]);
+            const stemRadius = seededRandomFloat(currentSeed++, archetype.stemRadiusRange[0], archetype.stemRadiusRange[1]);
+
+            // Derive stem and center hues from the base petal hue
+            const stemHue = (baseHue + seededRandomInt(currentSeed++, 50, 80)) % 360; // Greenish or brownish tint
+            const centerHue = (baseHue + seededRandomInt(currentSeed++, 120, 180)) % 360; // Complementary or contrasting
+
+            // Generate a creative name for the bloom
+            const bloomAdjectives = ["Vivid", "Serene", "Dynamic", "Luminous", "Tranquil", "Enigmatic", "Whimsical", "Resilient"];
+            const bloomNouns = ["Essence", "Form", "Aura", "Echo", "Pattern", "Nexus", "Matrix", "Cipher"];
+            const bloomName = `${seededRandomInt(currentSeed++, 0, 1) === 0 ? firstName : bloomAdjectives[seededRandomInt(currentSeed++, 0, bloomAdjectives.length - 1)]} ${bloomNouns[seededRandomInt(currentSeed++, 0, bloomNouns.length - 1)]}`;
+
+            // Generate a summary
+            const summaryTemplates = [
+                `This bloom, "${bloomName}", is a unique reflection of your name's energy. It embodies a blend of ${archetype.keywords.join(', ')} qualities.`,
+                `Representing your personal infoscape, "${bloomName}" radiates with ${archetype.name} characteristics, showcasing your unique digital presence.`,
+                `Discover "${bloomName}", a captivating visualization shaped by your identity, highlighting its ${archetype.keywords.join(', ')} aspects.`
+            ];
+            const summary = summaryTemplates[seededRandomInt(currentSeed++, 0, summaryTemplates.length - 1)];
+
+            const keywords = [...archetype.keywords, firstName.toLowerCase(), lastName.toLowerCase()].join(', ');
+
+            // Simulate a small delay for async feel
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            return {
+                id: combinedHash,
+                name: bloomName,
+                summary: summary,
+                keywords: keywords,
+                visuals: {
+                    hue: baseHue,
+                    saturation: saturation,
+                    brightness: brightness,
+                    stemHue: stemHue,
+                    centerHue: centerHue,
+                    petalCount: petalCount,
+                    petalShape: archetype.petalShape,
+                    bloomRadius: bloomSize * 50, // Scale for p5.js units
+                    petalSpread: petalSpread,
+                    petalWidth: petalWidth * 20, // Scale for p5.js units
+                    petalHeight: petalHeight * 20, // Scale for p5.js units
+                    petalDepth: petalDepth * 20, // Scale for p5.js units
+                    stemHeight: stemHeight * 50, // Scale for p5.js units
+                    stemRadius: stemRadius * 50, // Scale for p5.js units
+                }
+            };
+        }
+
+        // --- p5.js Sketch ---
+
+        /**
+         * Represents a generative flower in the p5.js sketch.
+         */
+        class Flower {
+            constructor(p, visuals) {
+                this.p = p; // Store the p5 instance
+                this.setVisuals(visuals);
+            }
+
+            /**
+             * Updates the flower's visual parameters.
+             * @param {Object} visuals The visual data for the flower.
+             */
+            setVisuals(visuals) {
+                this.visuals = visuals;
+                // Create p5 color objects for dynamic coloring
+                this.petalColor = this.p.color(visuals.hue, visuals.saturation, visuals.brightness);
+                this.stemColor = this.p.color(visuals.stemHue, visuals.saturation * 0.7, visuals.brightness * 0.5);
+                this.centerColor = this.p.color(visuals.centerHue, visuals.saturation, visuals.brightness * 0.8);
+            }
+
+            /**
+             * Displays the flower on the p5.js canvas.
+             */
+            display() {
+                const p = this.p; // Shorthand for p5 instance
+
+                p.push(); // Isolate transformations for this flower
+
+                // Apply some rotation for dynamic view
+                p.rotateX(p.frameCount * 0.001);
+                p.rotateY(p.frameCount * 0.002);
+
+                p.noStroke(); // No outlines for shapes
+                p.specularMaterial(200); // Gives a shiny, reflective look
+
+                // Stem
+                p.push();
+                p.rotateX(p.PI / 2); // Rotate to stand upright along Y-axis
+                p.translate(0, 0, -this.visuals.stemHeight / 2); // Position stem base at origin
+                p.fill(this.stemColor);
+                p.cylinder(this.visuals.stemRadius, this.visuals.stemHeight, 24, 1); // Radius, Height, DetailX, DetailY
+                p.pop();
+
+                // Bloom (petals and center)
+                p.push();
+                // Position bloom above the stem
+                p.translate(0, -this.visuals.stemHeight / 2 - this.visuals.bloomRadius / 2, 0);
+
+                // Center of the bloom
+                p.fill(this.centerColor);
+                p.sphere(this.visuals.bloomRadius * 0.6, 24, 24);
+
+                // Petals
+                const petalCount = this.visuals.petalCount;
+                const angleStep = p.TWO_PI / petalCount; // Angle between each petal
+
+                for (let i = 0; i < petalCount; i++) {
+                    p.push();
+                    p.rotateY(angleStep * i); // Rotate around the Y-axis for each petal
+                    p.translate(this.visuals.bloomRadius * this.visuals.petalSpread, 0, 0); // Position petal outwards from center
+                    p.rotateZ(p.PI / 2); // Rotate petal to face outwards
+                    p.fill(this.petalColor);
+
+                    if (this.visuals.petalShape === "ellipsoid") {
+                        p.ellipsoid(this.visuals.petalWidth, this.visuals.petalHeight, this.visuals.petalDepth, 24, 24);
+                    } else { // Default to sphere if not ellipsoid
+                        p.sphere(this.visuals.petalWidth / 2, 24, 24);
+                    }
+                    p.pop();
+                }
+                p.pop(); // End bloom transformations
+                p.pop(); // End flower transformations
+            }
+        }
+
+        // The p5.js sketch definition
+        const sketch = (p) => {
+            let flowerInstance; // The current flower object
+
+            p.setup = () => {
+                // Create canvas within the container, ensuring WebGL mode
+                const canvas = p.createCanvas(p5CanvasContainer.offsetWidth, p5CanvasContainer.offsetHeight, p.WEBGL);
+                canvas.parent('p5-canvas-container');
+                p.background(0); // Black background initially
+                p.noLoop(); // Don't continuously redraw, only when data changes
+                p.colorMode(p.HSB, 360, 100, 100); // Use HSB for intuitive color manipulation
+
+                // Add ambient light for overall scene illumination
+                p.ambientLight(50);
+                // Add directional light to create shadows and highlights
+                p.directionalLight(p.color(255, 255, 255), 0, 0, -1); // White light from behind
+                p.pointLight(p.color(255, 255, 255), 100, 100, 200); // White light from front-top-right
+            };
+
+            p.draw = () => {
+                p.background(0); // Clear background on each draw
+                if (flowerInstance) {
+                    flowerInstance.display(); // Draw the flower if it exists
+                }
+            };
+
+            p.windowResized = () => {
+                // Resize canvas when window is resized to fit container
+                p.resizeCanvas(p5CanvasContainer.offsetWidth, p5CanvasContainer.offsetHeight);
+                p.redraw(); // Redraw the scene after resize
+            };
+
+            /**
+             * Sets the visual data for the flower and redraws the canvas.
+             * @param {Object} visuals The visual data for the flower.
+             */
+            p.setFlower = (visuals) => {
+                if (!flowerInstance) {
+                    flowerInstance = new Flower(p, visuals);
+                } else {
+                    flowerInstance.setVisuals(visuals);
+                }
+                p.redraw(); // Request a redraw to display the new flower
+            };
+
+            /**
+             * Handles canvas clicks to show the bloom info overlay.
+             */
+            p.mouseClicked = () => {
+                // Check if the click is within the canvas bounds and not on the info panel
+                const mouseXInCanvas = p.mouseX >= 0 && p.mouseX <= p.width;
+                const mouseYInCanvas = p.mouseY >= 0 && p.mouseY <= p.height;
+
+                // Check if info panel is visible and click is on it
+                const isClickOnInfoPanel = bloomInfo.classList.contains('hidden') ? false :
+                    (p.mouseX > p.width - bloomInfo.offsetWidth && p.mouseY < bloomInfo.offsetHeight);
+
+                if (mouseXInCanvas && mouseYInCanvas && !isClickOnInfoPanel && currentFlowerData) {
+                    showBloomInfo(currentFlowerData);
+                }
+            };
+        };
+
+        // Initialize p5.js sketch after DOM is ready
+        // Using a try-catch for p5.js initialization to catch WebGL errors
+        try {
+            p5Instance = new p5(sketch);
+        } catch (e) {
+            console.error("p5.js initialization failed:", e);
+            p5CanvasContainer.innerHTML = ''; // Clear canvas container
+            webglErrorMessage.classList.remove('hidden'); // Show error message
+        }
+
+        // --- Event Handlers and UI Logic ---
+
+        /**
+         * Updates the UI with the generated flower's name and triggers its rendering.
+         * @param {Object} flower The generated flower data object.
+         */
+        function updateFlowerUI(flower) {
+            currentFlowerData = flower;
+            currentFlowerName = flower.name;
+            currentFlowerVisuals = flower.visuals;
+
+            currentBloomDisplay.textContent = currentFlowerName;
+            if (p5Instance) {
+                p5Instance.setFlower(currentFlowerVisuals);
+            }
+        }
+
+        /**
+         * Displays the bloom information overlay.
+         * @param {Object} data The flower data to display.
+         */
+        function showBloomInfo(data) {
+            infoBloomName.textContent = data.name;
+            infoBloomSummary.textContent = data.summary;
+            infoBloomKeywords.textContent = data.keywords;
+            bloomInfo.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the bloom information overlay.
+         */
+        function hideBloomInfo() {
+            bloomInfo.classList.add('hidden');
+        }
+
+        /**
+         * Handles the click event for the generate button.
+         */
+        generateBtn.addEventListener('click', async () => {
+            const firstName = firstNameInput.value.trim();
+            const lastName = lastNameInput.value.trim();
+
+            if (!firstName || !lastName) {
+                nameError.classList.remove('hidden');
+                return;
+            } else {
+                nameError.classList.add('hidden');
+            }
+
+            generateBtn.textContent = 'Generating...';
+            generateBtn.disabled = true;
+
+            const flower = await generateFlowerData(firstName, lastName);
+            updateFlowerUI(flower);
+
+            generateBtn.textContent = 'Generate My Bloom';
+            generateBtn.disabled = false;
+            hideBloomInfo(); // Hide info panel after generating new bloom
+        });
+
+        // Close bloom info button handler
+        closeInfoBtn.addEventListener('click', hideBloomInfo);
+
+        // --- YouTube Iframe API Integration ---
+
+        // This function is called by the YouTube Iframe API once it's ready.
+        function onYouTubeIframeAPIReady() {
+            // Player will be created and played only on user interaction.
+            console.log("YouTube Iframe API Ready.");
+        }
+
+        /**
+         * Creates and initializes the YouTube player.
+         * Auto-plays the specific ambient track.
+         */
+        function createAndPlayYoutubePlayer() {
+            if (youtubePlayer) return; // Player already exists
+
+            youtubePlayer = new YT.Player('youtube-player', {
+                height: '0', // Hidden player
+                width: '0',  // Hidden player
+                videoId: 'Dmyi7jOjlPk', // Ambient track
+                playerVars: {
+                    'autoplay': 1, // Autoplay after user gesture
+                    'controls': 0, // No controls
+                    'loop': 1, // Loop the video
+                    'playlist': 'Dmyi7jOjlPk', // Required for looping single video
+                    'disablekb': 1, // Disable keyboard controls
+                    'modestbranding': 1 // Remove YouTube logo
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        /**
+         * Callback when YouTube player is ready.
+         * @param {Object} event The player ready event.
+         */
+        function onPlayerReady(event) {
+            event.target.setVolume(20); // Set a low volume
+            event.target.playVideo(); // Start playing
+            musicToggleBtn.textContent = 'Pause Ambient Music';
+        }
+
+        /**
+         * Callback when YouTube player state changes.
+         * Handles looping logic and button text.
+         * @param {Object} event The player state change event.
+         */
+        function onPlayerStateChange(event) {
+            // If video ends and looping is enabled (via playlist property)
+            // The API handles loop, so this mostly for debug/robustness
+            if (event.data === YT.PlayerState.ENDED) {
+                event.target.playVideo(); // Restart video to ensure continuous loop
+            }
+        }
+
+        /**
+         * Toggles the playback of the ambient music.
+         */
+        function toggleMusic() {
+            if (!youtubePlayer) {
+                createAndPlayYoutubePlayer();
+            } else {
+                if (youtubePlayer.getPlayerState() === YT.PlayerState.PLAYING || youtubePlayer.getPlayerState() === YT.PlayerState.BUFFERING) {
+                    youtubePlayer.pauseVideo();
+                    musicToggleBtn.textContent = 'Play Ambient Music';
+                } else {
+                    youtubePlayer.playVideo();
+                    musicToggleBtn.textContent = 'Pause Ambient Music';
+                }
+            }
+        }
+
+        // Music toggle button handler
+        musicToggleBtn.addEventListener('click', toggleMusic);
+
+        // --- Global Error Handling ---
+
+        /**
+         * Global error listener to catch and display WebGL related errors.
+         * Provides user-friendly feedback for rendering issues.
+         */
+        window.addEventListener('error', (event) => {
+            const errorMessage = event.message || '';
+            const isWebGLRelated = errorMessage.includes('WebGL') || errorMessage.includes('webgl') ||
+                                   errorMessage.includes('context') || errorMessage.includes('shader');
+
+            if (isWebGLRelated) {
+                console.error("Caught WebGL-related error:", event);
+                // Prevent multiple error messages if already shown
+                if (webglErrorMessage.classList.contains('hidden')) {
+                    p5CanvasContainer.innerHTML = ''; // Clear canvas container
+                    webglErrorMessage.classList.remove('hidden'); // Show error message
+                    if (p5Instance) {
+                        p5Instance.remove(); // Remove the p5 instance to prevent further errors
+                        p5Instance = null;
+                    }
+                }
+                event.preventDefault(); // Prevent default browser error reporting for this type
+            }
+        });
+
+        // --- Initial Load ---
+        // Generate a default bloom on page load, e.g., for "Guest User"
+        // This ensures something is displayed immediately.
+        window.addEventListener('load', () => {
+            // Set default values for inputs for better UX
+            firstNameInput.value = "Guest";
+            lastNameInput.value = "User";
+            // Trigger generation programmatically
+            generateBtn.click();
+        });
+
+    </script>
+
+    <div style="position:fixed;bottom:10px;right:10px;background:rgba(0,0,0,0.7);color:white;padding:5px 10px;border-radius:5px;font-family:sans-serif;font-size:12px">
+        Created by Dakota Rain Lock, powered by Holy Grail. A Dakota Rain Lock Invention.
+    </div>
+    
+</body>
+</html>
